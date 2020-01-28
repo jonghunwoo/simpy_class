@@ -80,7 +80,7 @@ class Sink(object):
                 if self.absolute_arrivals:
                     self.arrivals.append(now)
                 else:
-                    self.arrivals.append(now)
+                    self.arrivals.append(now - self.last_arrival)
                 self.last_arrival = now
             self.parts_rec += 1
 
@@ -125,7 +125,6 @@ class Process(object):
         start_time = self.env.now
         self.start_time.append(start_time)
         yield self.env.timeout(proc_time)
-        print(self.name, self.env.now)
         self.working_time += self.env.now - start_time
 
         if self.out.__class__.__name__ == 'Process':
@@ -182,11 +181,7 @@ class Monitor(object):
 
             if self.port.__class__.__name__ == 'Sink':
                 if len(self.port.arrivals) > 0:
-                    temp_list = []
-                    for i in range(1, len(self.port.arrivals)):
-                        temp_list.append(self.port.arrivals[i] - self.port.arrivals[i - 1])
-                    th = 1 / (np.mean(temp_list))
-
+                    th = 1 / np.mean(self.port.arrivals)
                     self.TH.append(th)
                     self.TH_time.append(self.env.now)
             else:

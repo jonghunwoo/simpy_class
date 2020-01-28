@@ -66,6 +66,8 @@ class Sink(object):
         self.absolute_arrivals = absolute_arrivals
         self.waits = []
         self.arrivals = []
+        self.th = 0.0
+        self.TH = []
         self.debug = debug
         self.parts_rec = 0
         self.selector = selector
@@ -81,12 +83,16 @@ class Sink(object):
                 if self.absolute_arrivals:
                     self.arrivals.append(now)
                 else:
-                    self.arrivals.append(now)
+                    self.arrivals.append(now - self.last_arrival)
                 self.last_arrival = now
             self.parts_rec += 1
 
+
             if self.debug:
                 print(part)
+
+
+
 
 
 class Process(object):
@@ -181,11 +187,7 @@ class Monitor(object):
 
             if self.port.__class__.__name__ == 'Sink':
                 if len(self.port.arrivals) > 0:
-                    temp_list = []
-                    for i in range(1, len(self.port.arrivals)):
-                        temp_list.append(self.port.arrivals[i] - self.port.arrivals[i - 1])
-                    th = 1 / (np.mean(temp_list))
-
+                    th = 1 / np.mean(self.port.arrivals)
                     self.TH.append(th)
                     self.TH_time.append(self.env.now)
             else:
