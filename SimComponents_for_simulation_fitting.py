@@ -125,6 +125,7 @@ class Process(object):
         start_time = self.env.now
         self.start_time.append(start_time)
         yield self.env.timeout(proc_time)
+        print(self.name, self.env.now)
         self.working_time += self.env.now - start_time
 
         if self.out.__class__.__name__ == 'Process':
