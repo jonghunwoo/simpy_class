@@ -41,7 +41,7 @@ class DataframeSource(object):
                 self.start_time = temp["Assembly"][0]
                 self.start_time_list.append(self.env.now)
 
-                self.parts_sent += 1
+                #self.parts_sent += 1
                 p = DataframePart(self.env.now, temp, self.parts_sent, src=self.id,
                                   flow_id=self.flow_id)
 
@@ -51,6 +51,7 @@ class DataframeSource(object):
                     yield stop
 
                 self.out.put(p)
+                self.parts_sent += 1
             except StopIteration:
                 break
 
@@ -92,9 +93,6 @@ class Sink(object):
                 print(part)
 
 
-
-
-
 class Process(object):
 
     def __init__(self, env, name, subprocess_num, qlimit=None, limit_bytes=True, debug=False):
@@ -116,6 +114,7 @@ class Process(object):
         self.action = env.process(self.run())
         self.start_time = []
         self.finish_time = 0.0
+        self.output = 0
 
     def run(self):
         while True:
@@ -144,11 +143,12 @@ class Process(object):
                 self.out.wait1.append(stop)
                 yield stop
         self.out.put(msg)
+        self.output += 1
 
         self.busy -= 1
         self.wait2.succeed()
         self.wait2 = self.env.event()
-        self.finish_time = self.env.now
+        self.finish_time = self.env.nowr
 
         if self.debug:
             print(msg)
@@ -180,10 +180,13 @@ class Monitor(object):
         self.action = env.process(self.run())
         self.TH = []
         self.TH_time = []
+        self.input_list = []
+        self.output_list = []
 
     def run(self):
         while True:
-            yield self.env.timeout(self.dist())
+            # yield self.env.timeout(self.dist())
+            yield self.env.timeout(self.dist)
 
             if self.port.__class__.__name__ == 'Sink':
                 if len(self.port.arrivals) > 0:
@@ -195,5 +198,7 @@ class Monitor(object):
                 wip = self.port.inventory
                 self.WIP.append(wip)
                 self.M.append(m)
+                self.input_list.append(self.port.parts_rec)
+                self.output_list.append(self.port.output)
 
             self.time.append(self.env.now)

@@ -16,28 +16,31 @@ actl : 200, 185, 155'''
 
 start = time.time()
 env = simpy.Environment()
-RUN_TIME = 3000
+RUN_TIME = 1000
 
-samp_dist = functools.partial(random.expovariate, 1)
+#samp_dist = functools.partial(random.expovariate, 1)
+samp_dist = 1
 
 def generator():
     while True:
         dict = OrderedDict()
-        temp_iat = st.chi2.rvs(df=1.53, loc=-0, scale=0.23, size=1)
+        temp_iat = st.chi2.rvs(df=1.53, loc=-0, scale=0.22, size=1)
         IAT_assy = np.floor(temp_iat)
         proc_assy = 0
         while proc_assy <= 0:
-            proc_assy = st.exponnorm.rvs(K=5.12, loc=3.91, scale=2.25)
+            proc_assy = st.exponnorm.rvs(K=7.71, loc=2.40, scale=1.70)
 
-        IAT_oft = st.pareto.rvs(b=3.39, loc=-3.23, scale=3.23)
-        proc_oft = 0
-        while proc_oft <= 0:
-            proc_oft = st.chi2.rvs(df=1.04, loc=1, scale=13.58)
+        proc_oft = st.chi2.rvs(df=1.63, loc=1.00, scale=7.43)
+        IAT_oft = 0
+        while IAT_oft <= 0:
+            IAT_oft = st.expon.rvs(loc=-3.00, scale=9.25)
 
-        IAT_pnt = st.beta.rvs(a=0.69, b=1728.22, loc=-0.00, scale=1835.15)
+        IAT_pnt = 0
+        while IAT_pnt <= 0:
+            IAT_pnt = st.exponnorm.rvs(K=5.33, loc=0.73, scale=2.3)
         proc_pnt = 0
         while proc_pnt <= 0:
-            proc_pnt = st.exponnorm.rvs(K=2.2, loc=7.1, scale=2.3)
+            proc_pnt = st.exponnorm.rvs(K=1.75, loc=8.53, scale=2.63)
 
         dict["Assembly"] = [IAT_assy, proc_assy]
         dict["Outfitting"] = [IAT_oft, proc_oft]
@@ -47,11 +50,15 @@ def generator():
 
 data_gen = generator()
 
+m_assy = 295
+m_oft = 285
+m_pnt = 232
+
 Source = Source(env, "Source", data_gen, initial_delay=0)
 Sink = Sink(env, "Sink", debug=False, rec_arrivals=True)
-Assembly = Process(env, "Assembly", 495, qlimit=10000)  # 조립 공정 작업장 수 = 495
-Outfitting = Process(env, "Outfitting", 275, qlimit=10000)  # 의장 공정 작업장 수 = 275
-Painting = Process(env, "Painting", 160, qlimit=10000)  # 도장 공정 작업장 수 = 160
+Assembly = Process(env, "Assembly", m_assy, qlimit=10000)  # 조립 공정 작업장 수 = 200
+Outfitting = Process(env, "Outfitting", m_oft, qlimit=10000)  # 의장 공정 작업장 수 = 185
+Painting = Process(env, "Painting", m_pnt, qlimit=10000)  # 도장 공정 작업장 수 = 155
 
 Monitor1 = Monitor(env, Assembly, samp_dist)
 Monitor2 = Monitor(env, Outfitting, samp_dist)
@@ -72,15 +79,15 @@ print('#'*80)
 print("Results of simulation")
 print('#'*80)
 
+# 코드 실행 시간
 print("time :", time.time() - start)
 
 # 총 리드타임 - 마지막 part가 Sink에 도달하는 시간
-
 print("Total Lead Time : ", Sink.last_arrival)
 
-total_assy = (Assembly.finish_time - Assembly.start_time[0]) * 495
-total_oft = (Outfitting.finish_time - Outfitting.start_time[0]) * 275
-total_pnt = (Painting.finish_time - Painting.start_time[0]) * 160
+total_assy = (Assembly.finish_time - Assembly.start_time[0]) * m_assy
+total_oft = (Outfitting.finish_time - Outfitting.start_time[0]) * m_oft
+total_pnt = (Painting.finish_time - Painting.start_time[0]) * m_pnt
 
 print("utilization of Assembly : {}".format(Assembly.working_time/total_assy))
 print("utilization of Outfitting : {}".format(Outfitting.working_time/total_oft))
@@ -89,57 +96,114 @@ print("utilization of Painting : {}".format(Painting.working_time/total_pnt))
 # 각 공정에서 후행공정으로 넘긴 블록의 수
 print(Assembly.parts_rec, Outfitting.parts_rec, Painting.parts_rec)
 
-# Source에서 part 보내는 정도
-part_list = []
-for i in range(len(Source.start_time_list)):
-    part_list.append(i)
-
-plt.plot(part_list[:800], Source.start_time_list[:800])
-plt.xlabel("part")
-plt.ylabel("time")
-plt.show()
-
 # M
-plt.plot(Monitor1.time, Monitor1.M)
+'''plt.plot(Monitor1.time[:200], Monitor1.M[:200])
 plt.xlabel("time")
 plt.ylabel("m")
 plt.title("Assembly")
 plt.show()
 
-plt.plot(Monitor2.time, Monitor2.M)
+plt.plot(Monitor2.time[:200], Monitor2.M[:200])
 plt.xlabel("time")
 plt.ylabel("m")
 plt.title("Outfitting")
 plt.show()
 
-plt.plot(Monitor3.time, Monitor3.M)
+plt.plot(Monitor3.time[:200], Monitor3.M[:200])
 plt.xlabel("time")
 plt.ylabel("m")
 plt.title("Painting")
-plt.show()
+plt.show()'''
 
 # WIP
-plt.plot(Monitor1.time, Monitor1.WIP)
+'''plt.plot(Monitor1.time[:200], Monitor1.WIP[:200])
 plt.xlabel("time")
 plt.ylabel("WIP")
 plt.title("Assembly")
 plt.show()
 
-plt.plot(Monitor2.time, Monitor2.WIP)
+plt.plot(Monitor2.time[:200], Monitor2.WIP[:200])
 plt.xlabel("time")
 plt.ylabel("WIP")
 plt.title("Outfitting")
 plt.show()
 
-plt.plot(Monitor3.time, Monitor3.WIP)
+plt.plot(Monitor3.time[:200], Monitor3.WIP[:200])
 plt.xlabel("time")
 plt.ylabel("WIP")
 plt.title("Painting")
-plt.show()
+plt.show()'''
 
 
 # TH
 plt.plot(Monitor4.TH_time, Monitor4.TH)
 plt.xlabel("time")
 plt.ylabel("TH")
+plt.show()
+
+# Source에서 part 보내는 정도
+'''part_list = []
+for i in range(len(Source.start_time_list)):
+    part_list.append(i)
+
+plt.plot(Source.start_time_list, part_list)
+plt.xlabel("time")
+plt.ylabel("part")
+plt.show()'''
+
+## input part 개수 + 가동중인 m의 개수
+input_assy = []
+input_oft = []
+input_pnt = []
+for i in range(len(Monitor1.input_list)):
+    if i == 0:
+        input_assy.append(Monitor1.input_list[0])
+        input_oft.append(Monitor2.input_list[0])
+        input_pnt.append(Monitor3.input_list[0])
+    else:
+        input_assy.append(Monitor1.input_list[i] - Monitor1.input_list[i-1])
+        input_oft.append(Monitor2.input_list[i] - Monitor2.input_list[i-1])
+        input_pnt.append(Monitor3.input_list[i] - Monitor3.input_list[i-1])
+
+
+fig, ax1 = plt.subplots()
+ax2 = ax1.twinx()
+data_y11 = ax1.plot(Monitor1.time, Monitor1.M, color='b', linestyle='-.', marker='o', label='M')
+data_y12 = ax1.plot(Monitor1.time, input_assy, 'r', label='# of input')
+data_y2 = ax2.plot(Monitor1.time, Monitor1.WIP, color='g', linestyle='--', marker='s', label='WIP')
+ax1.set_xlabel('time')
+ax1.set_ylabel('part')
+ax2.set_ylabel('WIP')
+data_y = data_y11 +data_y2 + data_y12
+labels = [l.get_label() for l in data_y]
+plt.title('Assembly')
+plt.legend(data_y, labels, loc=1)
+plt.show()
+
+fig, ax1 = plt.subplots()
+ax2 = ax1.twinx()
+data_y11 = ax1.plot(Monitor2.time, Monitor2.M, color='b', linestyle='-.', marker='o', label='M')
+data_y12 = ax1.plot(Monitor2.time, input_oft, 'r', label='# of input')
+data_y2 = ax2.plot(Monitor2.time, Monitor2.WIP, color='g', linestyle='--', marker='s', label='WIP')
+ax1.set_xlabel('time')
+ax1.set_ylabel('part')
+ax2.set_ylabel('WIP')
+data_y = data_y11 +data_y2 + data_y12
+labels = [l.get_label() for l in data_y]
+plt.title('Outfitting')
+plt.legend(data_y, labels, loc=1)
+plt.show()
+
+fig, ax1 = plt.subplots()
+ax2 = ax1.twinx()
+data_y11 = ax1.plot(Monitor3.time, Monitor3.M, color='b', linestyle='-.', marker='o', label='M')
+data_y12 = ax1.plot(Monitor3.time, input_pnt, 'r', label='# of input')
+data_y2 = ax2.plot(Monitor3.time, Monitor3.WIP, color='g', linestyle='--', marker='s', label='WIP')
+ax1.set_xlabel('time')
+ax1.set_ylabel('part')
+ax2.set_ylabel('WIP')
+data_y = data_y11 +data_y2 + data_y12
+labels = [l.get_label() for l in data_y]
+plt.title('Painting')
+plt.legend(data_y, labels, loc=1)
 plt.show()
