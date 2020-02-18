@@ -12,6 +12,7 @@ class Part(object):
         self.dst = dst
         self.flow_id = flow_id
         self.data = data
+        self.time_dict = {}
 
     def __repr__(self):
         return "id: {}, src: {}, time: {}".format(self.id, self.src, self.time)
@@ -37,7 +38,7 @@ class Source(object):
         while self.env.now < self.finish:
             try:
                 temp = next(self.data)
-                yield self.env.timeout(temp["Assembly"][0])
+                yield self.env.timeout(temp[self.out.name][0])
                 self.start_time_list.append(self.env.now)
                 # self.start_time += temp["Assembly"][0]
 
@@ -49,6 +50,8 @@ class Source(object):
                     stop = self.env.event()
                     self.out.wait1.append(stop)
                     yield stop
+
+                p.time_dict["IAT"] = temp[self.out.name][0]
 
                 self.out.put(p)
             except StopIteration:
@@ -70,6 +73,8 @@ class Sink(object):
         self.parts_rec = 0
         self.selector = selector
         self.last_arrival = 0.0
+        self.IAT_list = []
+        self.proc_list = []
 
     def put(self, part):
         if not self.selector or self.selector(part):
@@ -83,6 +88,9 @@ class Sink(object):
                     self.arrivals.append(now - self.last_arrival)
                 self.last_arrival = now
             self.parts_rec += 1
+
+            self.IAT_list.append(part.time_dict["IAT"])
+            self.proc_list.append(part.time_dict)
 
             if self.debug:
                 print(part)
@@ -127,6 +135,8 @@ class Process(object):
         self.start_time.append(start_time)
         yield self.env.timeout(proc_time)
         self.working_time += self.env.now - start_time
+
+        msg.time_dict[self.name + " proc time"] = proc_time
 
         if self.out.__class__.__name__ == 'Process':
             lag = msg.data[self.out.name][0]
