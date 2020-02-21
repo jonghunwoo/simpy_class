@@ -148,7 +148,7 @@ class Process(object):
         self.busy -= 1
         self.wait2.succeed()
         self.wait2 = self.env.event()
-        self.finish_time = self.env.nowr
+        self.finish_time = self.env.now
 
         if self.debug:
             print(msg)

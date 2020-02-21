@@ -58,9 +58,9 @@ data_gen = generator(data)
 
 env = simpy.Environment()
 
-m_assy = 330
-m_oft = 300
-m_pnt = 250
+m_assy = 300
+m_oft = 283
+m_pnt = 246
 
 Source = DataframeSource(env, "Source", data_gen)
 Sink = Sink(env, 'Sink', debug=False, rec_arrivals=True)
@@ -82,7 +82,7 @@ Monitor4 = Monitor(env, Sink, samp_dist)
 
 # Run it
 
-env.run(1200)
+env.run(800)
 
 print("time :", time.time() - start)
 
@@ -175,7 +175,8 @@ data_y = data_y11 +data_y2 + data_y12
 labels = [l.get_label() for l in data_y]
 plt.title('Assembly')
 plt.legend(data_y, labels, loc=1)
-plt.show()
+#plt.show()
+plt.savefig('record+data+assembly.png', dpi = 300)
 
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
@@ -189,7 +190,8 @@ data_y = data_y11 +data_y2 + data_y12
 labels = [l.get_label() for l in data_y]
 plt.title('Outfitting')
 plt.legend(data_y, labels, loc=1)
-plt.show()
+#plt.show()
+plt.savefig('record+data+outfitting.png', dpi = 300)
 
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
@@ -203,7 +205,8 @@ data_y = data_y11 +data_y2 + data_y12
 labels = [l.get_label() for l in data_y]
 plt.title('Painting')
 plt.legend(data_y, labels, loc=1)
-plt.show()
+#plt.show()
+plt.savefig('record+data+painting.png', dpi = 300)
 
 '''temp_list = []
 for i in range(len(Monitor1.time)):
